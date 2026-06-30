@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>خودکار</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0a0a0a;--ink-2:#444;--ink-3:#888;--ink-4:#bbb;
+  --surface:#fff;--bg:#f0f0f3;--s2:#f8f8f8;--s3:#f2f2f5;
+  --border:#ececec;--b2:#f0f0f0;
+  --like:#e0245e;--repost:#17bf63;--save:#f59e0b;--pin:#dc2020;
+  --radius:12px;--pill:999px;
+}
+body{font-family:'Vazirmatn',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh}
+.shell{max-width:640px;margin:0 auto;background:var(--surface);min-height:100vh;border-left:1px solid var(--border);border-right:1px solid var(--border)}
+
+/* ── Header ── */
+.header{position:sticky;top:0;z-index:300;background:rgba(255,255,255,.94);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border);height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 18px}
+.logo{font-weight:800;font-size:19px;letter-spacing:-.04em;color:var(--ink);cursor:pointer;user-select:none}
+.nav{display:flex;align-items:center;gap:2px}
+.nb{background:none;border:none;border-radius:var(--pill);padding:6px 12px;cursor:pointer;font-size:13px;font-family:inherit;color:var(--ink-3);font-weight:500;transition:background .15s,color .15s;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.nb:hover{background:var(--s2);color:var(--ink)}
+.nb.active{background:#efefef;color:var(--ink);font-weight:700}
+.nb.primary{background:var(--ink);color:#fff;font-weight:700}
+.nb.primary:hover{background:#222}
+.nb.ghost{border:1.5px solid var(--border);color:var(--ink-3)}
+.nb.ghost:hover{border-color:#bbb;color:var(--ink)}
+
+/* ── Toast ── */
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-14px);background:var(--ink);color:#fff;padding:10px 20px;border-radius:var(--pill);font-size:13px;font-weight:600;z-index:9999;box-shadow:0 6px 28px rgba(0,0,0,.18);opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── Views ── */
+.view{display:none}.view.active{display:block}
+
+/* ── Tabs ── */
+.tabs{display:flex;border-bottom:1.5px solid var(--b2)}
+.tab{flex:1;background:none;border:none;padding:13px 0;font-size:13.5px;font-family:inherit;color:var(--ink-3);cursor:pointer;font-weight:500;border-bottom:2.5px solid transparent;margin-bottom:-1.5px;transition:color .15s,border-color .15s}
+.tab.active{color:var(--ink);font-weight:700;border-bottom-color:var(--ink)}
+
+/* ── Compose drawer ── */
+.compose-drawer{overflow:hidden;max-height:0;transition:max-height .35s cubic-bezier(.4,0,.2,1);border-bottom:1px solid var(--b2)}
+.compose-drawer.open{max-height:420px}
+.compose-drawer-inner{padding:16px 20px}
+.compose-toolbar{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
+.fmt-btn{background:none;border:1.5px solid var(--border);border-radius:7px;padding:4px 9px;cursor:pointer;font-size:12.5px;font-family:inherit;color:var(--ink-2);transition:background .12s;line-height:1}
+.fmt-btn:hover{background:var(--s2)}
+.fmt-btn.b{font-weight:800}
+.fmt-btn.i{font-style:italic}
+.fmt-btn.u{text-decoration:underline}
+.fmt-btn.s{text-decoration:line-through}
+.compose-area{width:100%;min-height:100px;border:1.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;font-size:14.5px;font-family:inherit;resize:none;outline:none;line-height:1.8;color:var(--ink);background:var(--s2);transition:border-color .15s;overflow-y:hidden}
+.compose-area:focus{border-color:var(--ink);background:#fff}
+.compose-options{display:flex;gap:14px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.opt-label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-3);cursor:pointer;user-select:none}
+.opt-label input[type=checkbox]{accent-color:var(--ink);width:14px;height:14px;cursor:pointer}
+.char-count{font-size:11.5px;color:var(--ink-4);margin-right:auto}
+.char-count.warn{color:#f59e0b}
+.char-count.err{color:var(--like)}
+.compose-footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.compose-trigger{padding:14px 20px;display:flex;gap:12px;align-items:center;cursor:pointer;border-bottom:1px solid var(--b2)}
+.compose-trigger:hover{background:var(--s2)}
+.compose-trigger-text{font-size:14px;color:var(--ink-3)}
+.compose-trigger-arrow{margin-right:auto;color:var(--ink-4);font-size:12px;transition:transform .3s}
+.compose-trigger-arrow.open{transform:rotate(180deg)}
+
+/* ── Post card ── */
+.post-card{border-bottom:1px solid var(--b2);padding:16px 20px;display:flex;gap:12px;transition:background .1s;position:relative}
+.post-card:hover{background:#fafafa}
+.post-body{flex:1;min-width:0}
+.post-meta{display:flex;align-items:center;gap:7px;margin-bottom:5px;flex-wrap:wrap}
+.post-author{font-weight:700;font-size:14px;color:var(--ink);cursor:pointer}
+.post-author:hover{text-decoration:underline}
+.post-handle{color:var(--ink-3);font-size:12.5px}
+.post-time{color:var(--ink-4);font-size:11px;margin-right:auto}
+.badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:var(--pill)}
+.badge-friends{background:#e0f2fe;color:#0369a1}
+.badge-ghost{background:#f3f4f6;color:#6b7280}
+.badge-temp{background:#fef3c7;color:#92400e}
+.badge-edited{background:#f3f4f6;color:#6b7280;font-weight:500}
+.post-text{font-size:14.5px;line-height:1.78;color:#1a1a1a;margin-bottom:11px;word-break:break-word}
+.post-text b{font-weight:800}
+.post-text i{font-style:italic}
+.post-text u{text-decoration:underline}
+.post-text s{text-decoration:line-through}
+.mention-link,.hashtag-link{color:#1d9bf0;cursor:pointer;font-weight:600}
+.mention-link:hover,.hashtag-link:hover{text-decoration:underline}
+
+/* ── Search bar ── */
+.search-wrap{padding:12px 20px;border-bottom:1px solid var(--b2)}
+.search-box{display:flex;align-items:center;gap:9px;background:var(--s2);border:1.5px solid var(--border);border-radius:var(--pill);padding:9px 16px;transition:border-color .15s}
+.search-box:focus-within{border-color:var(--ink);background:#fff}
+.search-box svg{flex-shrink:0;color:var(--ink-3)}
+.search-input{border:none;background:none;outline:none;flex:1;font-size:13.5px;font-family:inherit;color:var(--ink)}
+.search-input::placeholder{color:var(--ink-4)}
+.search-clear{background:none;border:none;cursor:pointer;color:var(--ink-4);padding:2px;display:flex}
+.search-clear:hover{color:var(--ink)}
+
+/* ── Search results ── */
+.search-results{padding:8px 0}
+.search-section-title{padding:10px 20px 6px;font-size:12.5px;font-weight:700;color:var(--ink-3)}
+.search-user-row{display:flex;align-items:center;gap:11px;padding:10px 20px;cursor:pointer;transition:background .1s}
+.search-user-row:hover{background:var(--s2)}
+.search-user-info{flex:1;min-width:0}
+.search-user-name{font-weight:700;font-size:13.5px}
+.search-user-handle{font-size:12px;color:var(--ink-3)}
+.search-hashtag-row{display:flex;align-items:center;gap:11px;padding:10px 20px;cursor:pointer;transition:background .1s}
+.search-hashtag-row:hover{background:var(--s2)}
+.search-hashtag-icon{width:38px;height:38px;border-radius:50%;background:#e8f5fd;color:#1d9bf0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex-shrink:0}
+.search-hashtag-info{flex:1;min-width:0}
+.search-hashtag-name{font-weight:700;font-size:13.5px;color:var(--ink)}
+.search-hashtag-count{font-size:12px;color:var(--ink-3)}
+
+/* ── Hashtag page ── */
+.hashtag-header{padding:24px 20px;border-bottom:1px solid var(--b2);text-align:center}
+.hashtag-icon-lg{width:60px;height:60px;border-radius:50%;background:#e8f5fd;color:#1d9bf0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:24px;margin:0 auto 12px}
+.hashtag-title{font-weight:800;font-size:20px;color:var(--ink)}
+.hashtag-count{color:var(--ink-3);font-size:13px;margin-top:4px}
+
+/* ── Actions ── */
+.post-actions{display:flex;gap:2px;align-items:center}
+.act{background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--ink-3);font-family:inherit;padding:5px 8px;border-radius:8px;font-weight:500;transition:background .12s,color .12s}
+.act:hover{background:var(--s3)}
+.act.liked{color:var(--like);font-weight:700}
+.act.reposted{color:var(--repost);font-weight:700}
+.act.saved{color:var(--save);font-weight:700}
+.act.pinned-act{color:var(--pin);font-weight:700}
+.act-more{margin-right:auto}
+
+/* ── Post stats ── */
+.post-stats{display:flex;gap:14px;margin-top:8px;padding-top:8px;border-top:1px solid var(--b2)}
+.pstat{font-size:11px;color:var(--ink-4);display:flex;align-items:center;gap:4px}
+
+/* ── Comments ── */
+.cmts-drawer{overflow:hidden;max-height:0;transition:max-height .32s cubic-bezier(.4,0,.2,1)}
+.cmts-drawer.open{max-height:800px}
+.cmts-inner{border-top:1px solid var(--b2);padding-top:10px;margin-top:10px}
+.cmt-toggle-btn{background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--ink-3);font-family:inherit;padding:4px 0;margin-top:6px;transition:color .15s}
+.cmt-toggle-btn:hover{color:var(--ink)}
+.cmt-toggle-arrow{transition:transform .3s;display:inline-block}
+.cmt-toggle-arrow.open{transform:rotate(180deg)}
+.cmt-item{display:flex;gap:9px;margin-bottom:8px;align-items:flex-start}
+.cmt-bubble{background:var(--s2);border-radius:10px;padding:8px 12px;flex:1}
+.cmt-name{font-weight:700;font-size:12px;color:#333}
+.cmt-text{font-size:12.5px;color:#555;margin-top:2px;line-height:1.6}
+.cmt-priv-badge{font-size:9.5px;font-weight:700;background:#f3eeff;color:#7c3aed;padding:1px 6px;border-radius:var(--pill);margin-right:4px}
+.cmt-row{display:flex;gap:7px;margin-top:10px;padding-top:8px;border-top:1px solid var(--b2);align-items:center;flex-wrap:wrap}
+.cmt-input{flex:1;min-width:100px;border:1.5px solid var(--border);border-radius:var(--pill);padding:8px 13px;font-size:13px;font-family:inherit;outline:none;background:var(--s2);color:var(--ink);transition:border-color .15s}
+.cmt-input:focus{border-color:var(--ink);background:#fff}
+.cmt-priv-lbl{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--ink-3);cursor:pointer;white-space:nowrap}
+.cmt-priv-lbl input{accent-color:#7c3aed;width:13px;height:13px;cursor:pointer}
+.cmt-send{background:var(--ink);color:#fff;border:none;border-radius:var(--pill);padding:8px 14px;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;white-space:nowrap}
+.cmt-send:hover{background:#333}
+
+/* ── Avatar ── */
+.avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-family:inherit;user-select:none;flex-shrink:0;cursor:pointer;transition:opacity .15s}
+.avatar:hover{opacity:.85}
+.av-md{width:42px;height:42px;font-size:16px}
+.av-sm{width:29px;height:29px;font-size:11px}
+.av-lg{width:66px;height:66px;font-size:25px;border:3px solid #fff}
+.av-ghost{background:#d1d5db !important;color:#6b7280 !important}
+
+/* ── Profile ── */
+.profile-cover{height:96px;background:linear-gradient(135deg,#0a0a0a 0%,#1a1a2e 50%,#2d1b4e 100%);position:relative}
+.profile-av-wrap{position:absolute;bottom:-32px;right:20px}
+.profile-info{padding:44px 20px 16px;border-bottom:1px solid var(--b2);position:relative}
+.profile-name{font-weight:800;font-size:19px}
+.profile-handle{color:var(--ink-3);font-size:13px;margin:2px 0 7px}
+.profile-bio{color:var(--ink-2);font-size:13.5px;margin-bottom:13px;line-height:1.65}
+.profile-stats-row{display:flex;gap:18px;margin-bottom:13px}
+.pst{font-size:13px;color:var(--ink-3)}.pst b{color:var(--ink);font-weight:800}
+.profile-btns{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+
+/* ── Three-dot menu ── */
+.menu-wrap{position:relative;display:inline-block}
+.menu-btn{background:none;border:1.5px solid var(--border);border-radius:var(--pill);padding:6px 12px;cursor:pointer;color:var(--ink-3);font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;transition:border-color .15s,color .15s;letter-spacing:2px}
+.menu-btn:hover{border-color:#bbb;color:var(--ink)}
+.dropdown{position:fixed;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.22);min-width:180px;z-index:600;overflow:hidden;display:none}
+.dropdown.open{display:block}
+.dropdown-item{display:block;width:100%;background:none;border:none;padding:13px 18px;text-align:right;font-size:14px;font-family:inherit;cursor:pointer;color:var(--ink);transition:background .1s}
+.dropdown-item:hover{background:var(--s2)}
+.dropdown-item.danger{color:#dc2626}
+.dropdown-item.danger:hover{background:#fef2f2}
+.dropdown-divider{height:1px;background:var(--b2);margin:2px 0}
+
+/* ── Friends view ── */
+.friends-section{padding:14px 20px}
+.section-title{font-size:13.5px;font-weight:700;color:var(--ink-2);margin-bottom:10px}
+.person-row{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--b2)}
+.person-info{flex:1;min-width:0}
+.person-name{font-weight:700;font-size:13.5px;cursor:pointer}.person-name:hover{text-decoration:underline}
+.person-handle{font-size:12px;color:var(--ink-3)}
+
+/* ── Buttons ── */
+.btn{border:none;border-radius:var(--pill);padding:7px 18px;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;transition:background .15s,opacity .15s}
+.btn-primary{background:var(--ink);color:#fff}.btn-primary:hover{background:#222}
+.btn-primary:disabled{background:#ccc;cursor:not-allowed}
+.btn-ghost{background:none;border:1.5px solid var(--border);color:var(--ink-2)}.btn-ghost:hover{border-color:#bbb;color:var(--ink)}
+.btn-follow{background:#0ea5e9;color:#fff;font-size:12.5px;padding:6px 14px}.btn-follow:hover{background:#0284c7}
+.btn-unfollow{background:none;border:1.5px solid var(--border);color:var(--ink-2);font-size:12.5px;padding:6px 14px}.btn-unfollow:hover{border-color:#bbb}
+.btn-friend{background:var(--ink);color:#fff;font-size:12.5px;padding:6px 14px}
+.btn-pending{background:none;border:1.5px solid var(--border);color:var(--ink-3);font-size:12px;padding:5px 12px;cursor:default}
+.btn-accept{background:var(--repost);color:#fff;font-size:12px;padding:5px 12px}.btn-accept:hover{background:#15a357}
+.btn-reject{background:none;border:1.5px solid var(--border);color:var(--ink-3);font-size:12px;padding:5px 12px}.btn-reject:hover{border-color:#bbb}
+.btn-danger{background:none;border:1.5px solid #fca5a5;color:#dc2626;font-size:12px;padding:5px 12px}.btn-danger:hover{background:#fef2f2}
+.btn-sm{padding:5px 14px;font-size:12px}
+
+/* ── Auth ── */
+.auth-page{max-width:360px;margin:48px auto;padding:0 20px}
+.auth-title{font-weight:800;font-size:22px;margin-bottom:5px}
+.auth-sub{color:var(--ink-3);font-size:13.5px;margin-bottom:26px}
+.auth-fields{display:flex;flex-direction:column;gap:13px}
+.field-group{display:flex;flex-direction:column;gap:5px}
+.field-label{font-size:10.5px;font-weight:700;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase}
+.field-input{border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13.5px;font-family:inherit;outline:none;background:var(--s2);color:var(--ink);transition:border-color .15s}
+.field-input:focus{border-color:var(--ink);background:#fff}
+.auth-error{background:#fff0f3;border:1px solid #ffd0db;border-radius:10px;padding:9px 13px;color:#c0143c;font-size:12.5px}
+.auth-hint{text-align:center;font-size:11px;color:var(--ink-4)}
+.auth-switch{text-align:center;font-size:13px;color:var(--ink-3)}
+.auth-link{color:var(--ink);font-weight:700;cursor:pointer;text-decoration:underline}
+
+/* ── Misc ── */
+.notif-dot{display:inline-block;width:7px;height:7px;background:var(--like);border-radius:50%;vertical-align:middle}
+.empty{padding:48px 20px;text-align:center;color:var(--ink-4);font-size:13.5px}
+.section-gap{height:12px;background:var(--bg)}
+
+@media(max-width:640px){
+  .shell{border:none;min-height:100dvh}
+  .header{padding:0 10px;height:52px}
+  .logo{font-size:17px}
+  .nb{padding:5px 8px;font-size:12px;gap:3px}
+  .nb svg{width:13px;height:13px}
+  .post-card{padding:12px 14px;gap:10px}
+  .av-md{width:36px;height:36px;font-size:13px}
+  .post-author{font-size:13px}
+  .post-handle{font-size:11.5px}
+  .post-text{font-size:13.5px}
+  .act{padding:4px 6px;font-size:12px}
+  .act svg{width:14px;height:14px}
+  .compose-drawer-inner{padding:12px 14px}
+  .compose-area{font-size:13.5px}
+  .compose-options{gap:10px}
+  .opt-label{font-size:12px}
+  .compose-trigger{padding:12px 14px}
+  .compose-trigger-text{font-size:13px}
+  .profile-cover{height:80px}
+  .av-lg{width:56px;height:56px;font-size:20px}
+  .profile-av-wrap{bottom:-28px;right:14px}
+  .profile-info{padding:38px 14px 14px}
+  .profile-name{font-size:17px}
+  .profile-handle{font-size:12px}
+  .profile-bio{font-size:13px}
+  .profile-stats-row{gap:12px}
+  .pst{font-size:12px}
+  .friends-section{padding:12px 14px}
+  .person-row{gap:9px}
+  .auth-page{margin:28px auto;padding:0 16px}
+  .auth-title{font-size:20px}
+  .field-input{font-size:13px;padding:9px 11px}
+  .btn{padding:7px 14px;font-size:12.5px}
+  .tabs .tab{font-size:13px;padding:11px 0}
+  .cmt-input{font-size:12.5px;padding:7px 11px}
+  .pinned-header{padding:8px 14px 4px}
+  .compose-footer{flex-direction:row;gap:8px}
+  .char-count{font-size:11px}
+  .post-stats{margin-top:6px;padding-top:6px}
+  .pstat{font-size:10.5px}
+  .section-gap{height:8px}
+  .cmt-toggle-btn{font-size:12px}
+  .badge{font-size:9.5px;padding:2px 6px}
+  .post-meta{gap:5px}
+  .post-time{font-size:10.5px}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ═══ HEADER ═══ -->
+<header class="header">
+  <div class="logo" onclick="showFeed()">خودکار</div>
+  <nav class="nav" id="main-nav">
+    <button class="nb active" id="nav-feed" onclick="showFeed()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      خانه
+    </button>
+    <button class="nb" id="nav-friends" onclick="showFriends()" style="display:none">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      دوستان<span id="req-dot" style="display:none"> <span class="notif-dot"></span></span>
+    </button>
+    <button class="nb" id="nav-profile" onclick="showMyProfile()" style="display:none">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      من
+    </button>
+    <button class="nb primary" id="nav-login" onclick="showLogin()">ورود</button>
+    <button class="nb ghost" id="nav-logout" onclick="doLogout()" style="display:none;font-size:12px">خروج</button>
+  </nav>
+</header>
+
+<!-- ═══ TOAST ═══ -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════ FEED ═══════════════════ -->
+<div class="view active" id="view-feed">
+
+  <!-- Search bar -->
+  <div class="search-wrap">
+    <div class="search-box">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="search-input" id="feed-search-input" type="text" placeholder="جستجوی افراد، پست‌ها، هشتگ‌ها..." oninput="onFeedSearchInput()">
+      <button class="search-clear" id="feed-search-clear" style="display:none" onclick="clearFeedSearch()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+  <div id="feed-search-results" style="display:none"></div>
+
+
+  <div id="feed-body-content">
+  <!-- Compose drawer trigger -->
+  <div id="compose-trigger-wrap" style="display:none">
+    <div class="compose-trigger" id="compose-trigger" onclick="toggleDrawer()">
+      <div class="avatar av-md" id="quick-avatar"></div>
+      <span class="compose-trigger-text">پست گذاشتن</span>
+      <svg class="compose-trigger-arrow" id="drawer-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="compose-drawer" id="compose-drawer">
+      <div class="compose-drawer-inner">
+        <div class="compose-toolbar" style="justify-content:space-between">
+          <div style="display:flex;gap:4px">
+            <button class="fmt-btn b" onclick="applyFmt('b')" title="درشت"><b>ب</b></button>
+            <button class="fmt-btn i" onclick="applyFmt('i')" title="کج"><i>ک</i></button>
+            <button class="fmt-btn u" onclick="applyFmt('u')" title="زیرخط"><u>ز</u></button>
+            <button class="fmt-btn s" onclick="applyFmt('s')" title="روخط"><s>ر</s></button>
+          </div>
+          <span id="compose-title-text" style="font-size:12px;font-weight:700;color:var(--ink-3)">پست جدید</span>
+        </div>
+        <div id="compose-area-wrap" style="position:relative">
+          <div class="compose-area" id="compose-area" contenteditable="true" data-placeholder="چه چیزی در ذهن دارید؟ (۱ تا ۱۵۰ کاراکتر)" oninput="onComposeInput()" onkeydown="handleComposeKey(event)"></div>
+        </div>
+        <div class="compose-options">
+          <label class="opt-label" title="پست فقط برای دوستان شما">
+            <input type="checkbox" id="opt-friends"> دوستان
+          </label>
+          <label class="opt-label" title="پست ۲۴ ساعت بعد حذف می‌شود">
+            <input type="checkbox" id="opt-temp"> موقت
+          </label>
+          <label class="opt-label" title="نام شما مشخص نخواهد بود">
+            <input type="checkbox" id="opt-ghost"> روح
+          </label>
+          <span class="char-count" id="char-count">۰ / ۱۵۰</span>
+        </div>
+        <div class="compose-footer">
+          <button class="btn btn-ghost btn-sm" onclick="cancelEdit()">انصراف</button>
+          <button class="btn btn-primary btn-sm" id="compose-submit" onclick="doPost()" disabled>انتشار</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feed tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchFeedTab('all',this)">همه</button>
+    <button class="tab" onclick="switchFeedTab('friends',this)">دوستان</button>
+  </div>
+
+  <div id="feed-list"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ PROFILE ═══════════════════ -->
+<div class="view" id="view-profile">
+  <div class="profile-cover">
+    <div class="profile-av-wrap">
+      <div class="avatar av-lg" id="profile-avatar"></div>
+    </div>
+  </div>
+  <div class="profile-info">
+    <div class="profile-name" id="profile-name"></div>
+    <div class="profile-handle" id="profile-handle"></div>
+    <div class="profile-bio" id="profile-bio"></div>
+    <div class="profile-stats-row">
+      <div class="pst"><b id="profile-fol">0</b> دنبال‌کننده</div>
+      <div class="pst"><b id="profile-fing">0</b> دنبال‌شونده</div>
+      <div class="pst"><b id="profile-frnd">0</b> دوست</div>
+    </div>
+    <div class="profile-btns" id="profile-btns"></div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchProfileTab('posts',this)">پست‌ها</button>
+    <button class="tab" onclick="switchProfileTab('saved',this)">ذخیره‌ها</button>
+  </div>
+  <div id="profile-posts"></div>
+</div>
+
+<!-- ═══════════════════ FRIENDS ═══════════════════ -->
+<div class="view" id="view-friends">
+  <div id="friends-content"></div>
+</div>
+
+<!-- ═══════════════════ HASHTAG ═══════════════════ -->
+<div class="view" id="view-hashtag">
+  <div class="hashtag-header">
+    <div class="hashtag-icon-lg">#</div>
+    <div class="hashtag-title" id="hashtag-title-text"></div>
+    <div class="hashtag-count" id="hashtag-count-text"></div>
+  </div>
+  <div id="hashtag-posts"></div>
+</div>
+
+<!-- ═══════════════════ LOGIN ═══════════════════ -->
+<div class="view" id="view-login">
+  <div class="auth-page">
+    <div class="auth-title">ورود به خودکار</div>
+    <div class="auth-sub">خوش آمدید.</div>
+    <div class="auth-fields">
+      <div class="auth-error" id="login-error" style="display:none"></div>
+      <div class="field-group"><label class="field-label">نام کاربری</label><input class="field-input" id="login-handle" type="text" placeholder="بدون @" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="field-group"><label class="field-label">رمز عبور</label><input class="field-input" id="login-pass" type="password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="btn btn-primary" onclick="doLogin()" style="padding:12px">ورود</button>
+      <div class="auth-switch">حساب ندارید؟ <span class="auth-link" onclick="showRegister()">ثبت‌نام</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ REGISTER ═══════════════════ -->
+<div class="view" id="view-register">
+  <div class="auth-page">
+    <div class="auth-title">ساختن حساب</div>
+    <div class="auth-sub">به خودکار بپیوندید.</div>
+    <div class="auth-fields">
+      <div class="auth-error" id="reg-error" style="display:none"></div>
+      <div class="field-group"><label class="field-label">نام کامل</label><input class="field-input" id="reg-name" type="text"></div>
+      <div class="field-group"><label class="field-label">نام کاربری</label><input class="field-input" id="reg-handle" type="text" placeholder="بدون @"></div>
+      <div class="field-group"><label class="field-label">بیوگرافی</label><input class="field-input" id="reg-bio" type="text" placeholder="اختیاری"></div>
+      <div class="field-group"><label class="field-label">رمز عبور</label><input class="field-input" id="reg-pass" type="password"></div>
+      <button class="btn btn-primary" onclick="doRegister()" style="padding:12px">ثبت‌نام</button>
+      <div class="auth-switch">حساب دارید؟ <span class="auth-link" onclick="showLogin()">ورود</span></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /shell -->
+
+<!-- Click-outside overlay for dropdown -->
+<div id="overlay" onclick="closeAllMenus()" style="display:none;position:fixed;inset:0;z-index:499"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+let currentUser = null;
+let feedTab = 'all';
+let profileHandle = null;
+let profileTabMode = 'posts';
+let drawerOpen = false;
+
+const users = {};
+const passwords = {};
+
+const follows = {};
+const friends = {};
+const friendReqs = {};
+const savedByUser = {};
+
+let posts = []; // start empty
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+const AV_COLORS = ['#1a1a2e','#16213e','#0f3460','#533483','#2d6a4f','#1b4332','#6d4c41','#3d405b','#7f1d1d','#1e3a5f'];
+function avColor(h){ let s=0; for(const c of(h||'x')) s+=c.charCodeAt(0); return AV_COLORS[s%AV_COLORS.length]; }
+function escH(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// Linkify @mentions and #hashtags inside already-escaped/formatted HTML text
+function linkifyText(html){
+  // mentions: @handle (Persian/Latin word chars, digits, underscore)
+  html = html.replace(/@([a-zA-Z0-9_]+)/g, (m, handle) => {
+    if(users[handle]){
+      return `<span class="mention-link" onclick="event.stopPropagation();showProfile('${handle}')">@${handle}</span>`;
+    }
+    return m;
+  });
+  // hashtags: #word (Persian letters, Latin letters, digits, underscore)
+  html = html.replace(/#([\u0600-\u06FFa-zA-Z0-9_]+)/g, (m, tag) => {
+    return `<span class="hashtag-link" onclick="event.stopPropagation();showHashtag('${tag}')">#${tag}</span>`;
+  });
+  return html;
+}
+
+function extractHashtags(text){
+  const matches = text.match(/#([\u0600-\u06FFa-zA-Z0-9_]+)/g) || [];
+  return [...new Set(matches.map(m => m.slice(1)))];
+}
+
+function notify(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid=setTimeout(()=>t.classList.remove('show'),2400);
+}
+function showErr(id,msg){const e=document.getElementById(id);e.textContent=msg;e.style.display='block';}
+function hideErr(id){document.getElementById(id).style.display='none';}
+
+// Gregorian to Jalali (Persian) date conversion
+function toJalali(gy, gm, gd) {
+  const g_d_m = [0,31,59,90,120,151,181,212,243,273,304,334];
+  let jy = (gy <= 1600) ? 0 : 979;
+  gy -= (gy <= 1600) ? 621 : 1600;
+  const gy2 = (gm > 2) ? (gy + 1) : gy;
+  let days = (365*gy) + (parseInt((gy2+3)/4)) - (parseInt((gy2+99)/100)) + (parseInt((gy2+399)/400)) - 80 + gd + g_d_m[gm-1];
+  jy += 33*(parseInt(days/12053));
+  days %= 12053;
+  jy += 4*(parseInt(days/1461));
+  days %= 1461;
+  if (days > 365) {
+    jy += parseInt((days-1)/365);
+    days = (days-1)%365;
+  }
+  let jm, jd;
+  if (days < 186) {
+    jm = 1 + parseInt(days/31);
+    jd = 1 + (days%31);
+  } else {
+    jm = 7 + parseInt((days-186)/30);
+    jd = 1 + ((days-186)%30);
+  }
+  return [jy, jm, jd];
+}
+const JALALI_MONTHS=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+const FA_DIGITS=['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+function toFaDigits(n){ return String(n).replace(/[0-9]/g, d=>FA_DIGITS[d]); }
+function nowStr(){
+  const d=new Date();
+  const [jy,jm,jd]=toJalali(d.getFullYear(), d.getMonth()+1, d.getDate());
+  const pad=n=>String(n).padStart(2,'0');
+  return `${toFaDigits(jd)} ${JALALI_MONTHS[jm-1]} ${toFaDigits(jy)} · ${toFaDigits(pad(d.getHours()))}:${toFaDigits(pad(d.getMinutes()))}`;
+}
+function tsNow(){ return Date.now(); }
+
+function isFriend(a,b){ return friends[a]&&friends[a].has(b)&&friends[b]&&friends[b].has(a); }
+function isFollowing(a,b){ return follows[a]&&follows[a].has(b); }
+function hasPendingReq(from,to){ return friendReqs[to]&&friendReqs[to].has(from); }
+
+function ensureSocial(h){
+  if(!follows[h])    follows[h]=new Set();
+  if(!friends[h])    friends[h]=new Set();
+  if(!friendReqs[h]) friendReqs[h]=new Set();
+  if(!savedByUser[h])savedByUser[h]=new Set();
+}
+
+function canSee(post, viewer){
+  if(post.isGhost && !post.isGhostRevealed) return true; // ghost posts are public but anonymous
+  if(post.privacy==='friends') return viewer===post.author || (viewer && isFriend(viewer,post.author));
+  return true;
+}
+function canSeeComment(c, postAuthor, viewer){
+  if(!c.isPrivate) return true;
+  if(!viewer) return false;
+  if(viewer===c.author||viewer===postAuthor) return true;
+  if(isFriend(viewer,c.author)&&isFriend(viewer,postAuthor)) return true;
+  return false;
+}
+
+// Expired temp posts
+function isExpired(post){
+  if(!post.isTemp) return false;
+  return (tsNow() - post.createdAt) > 24*60*60*1000;
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+function setNav(key){
+  ['feed','friends','profile'].forEach(k=>{
+    const el=document.getElementById('nav-'+k);
+    if(el) el.classList.toggle('active',k===key);
+  });
+}
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  closeAllMenus();
+}
+
+function showFeed(){
+  setNav('feed');
+  renderFeed();
+  showView('feed');
+}
+function showMyProfile(){
+  if(!currentUser){showLogin();return;}
+  showProfile(currentUser);
+}
+function showProfile(handle){
+  if(!handle){showLogin();return;}
+  const u=users[handle]; if(!u) return;
+  setNav('profile');
+  profileHandle=handle;
+  profileTabMode='posts';
+
+  const av=document.getElementById('profile-avatar');
+  av.textContent=u.avatar; av.style.background=avColor(handle);
+  av.onclick=()=>{};
+
+  document.getElementById('profile-name').textContent=u.name;
+  document.getElementById('profile-handle').textContent='@'+u.handle;
+  document.getElementById('profile-bio').textContent=u.bio||'';
+
+  const folCount=Object.keys(users).filter(h=>follows[h]&&follows[h].has(handle)).length;
+  const fingCount=follows[handle]?follows[handle].size:0;
+  const frndCount=friends[handle]?friends[handle].size:0;
+  document.getElementById('profile-fol').textContent=folCount;
+  document.getElementById('profile-fing').textContent=fingCount;
+  document.getElementById('profile-frnd').textContent=frndCount;
+
+  renderProfileBtns(handle);
+  renderProfilePosts(handle);
+
+  // Reset tab UI
+  document.querySelectorAll('#view-profile .tab').forEach((t,i)=>{t.classList.toggle('active',i===0);});
+
+  showView('profile');
+}
+function switchProfileTab(mode,btn){
+  profileTabMode=mode;
+  document.querySelectorAll('#view-profile .tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  if(profileHandle) renderProfilePosts(profileHandle);
+}
+
+function renderProfileBtns(handle){
+  const el=document.getElementById('profile-btns');
+  const isMe=handle===currentUser;
+
+  if(!currentUser || isMe){
+    if(isMe){
+      // three-dot menu for own profile
+      el.innerHTML=`
+        <div class="menu-wrap">
+          <button class="menu-btn" onclick="toggleMenu('profile-menu',this)" title="بیشتر">···</button>
+          <div class="dropdown" id="profile-menu">
+            <button class="dropdown-item" onclick="showFriends();closeAllMenus()">دوستان</button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item danger" onclick="doLogout();closeAllMenus()">خروج از حساب</button>
+          </div>
+        </div>`;
+    } else {
+      el.innerHTML='';
+    }
+    return;
+  }
+
+  const isF=isFollowing(currentUser,handle);
+  const isFr=isFriend(currentUser,handle);
+  const pending=hasPendingReq(currentUser,handle);
+  const theyReq=hasPendingReq(handle,currentUser);
+
+  let html='';
+  html+=isF
+    ?`<button class="btn btn-unfollow" onclick="doUnfollow('${handle}')">دنبال‌نکردن</button>`
+    :`<button class="btn btn-follow" onclick="doFollow('${handle}')">دنبال کردن</button>`;
+
+  if(isFr)
+    html+=`<button class="btn btn-danger btn-sm" onclick="doUnfriend('${handle}')">خروج از دوستی</button>`;
+  else if(theyReq)
+    html+=`<button class="btn btn-accept" onclick="acceptReq('${handle}')">پذیرش درخواست</button>`;
+  else if(pending)
+    html+=`<button class="btn btn-pending">درخواست ارسال شد</button>`;
+  else
+    html+=`<button class="btn btn-friend" onclick="sendFriendReq('${handle}')">درخواست دوستی</button>`;
+
+  el.innerHTML=html;
+}
+
+function showFriends(){
+  if(!currentUser){showLogin();return;}
+  setNav('friends');
+  renderFriends();
+  showView('friends');
+}
+
+// ═══════════════════════════════════════════
+// SEARCH (inline within feed)
+// ═══════════════════════════════════════════
+function onFeedSearchInput(){
+  const v=document.getElementById('feed-search-input').value;
+  document.getElementById('feed-search-clear').style.display = v.trim() ? 'flex' : 'none';
+  const resultsBox=document.getElementById('feed-search-results');
+  const bodyBox=document.getElementById('feed-body-content');
+  if(v.trim().length>0){
+    resultsBox.style.display='block';
+    bodyBox.style.display='none';
+    runFeedSearch(v);
+  } else {
+    resultsBox.style.display='none';
+    bodyBox.style.display='block';
+  }
+}
+function clearFeedSearch(){
+  const input=document.getElementById('feed-search-input');
+  input.value='';
+  document.getElementById('feed-search-clear').style.display='none';
+  document.getElementById('feed-search-results').style.display='none';
+  document.getElementById('feed-body-content').style.display='block';
+  input.focus();
+}
+
+function getAllHashtags(){
+  const counts={};
+  posts.forEach(p=>{
+    if(isExpired(p)) return;
+    extractHashtags(p.content).forEach(tag=>{
+      counts[tag]=(counts[tag]||0)+1;
+    });
+  });
+  return counts;
+}
+
+function runFeedSearch(qRaw){
+  const container=document.getElementById('feed-search-results');
+  const q=(qRaw||'').trim().toLowerCase().replace(/^@/,'').replace(/^#/,'');
+
+  if(!q){
+    container.innerHTML='';
+    return;
+  }
+
+  const userMatches=Object.values(users).filter(u=>
+    u.name.toLowerCase().includes(q) || u.handle.toLowerCase().includes(q)
+  );
+
+  const allTags=getAllHashtags();
+  const tagMatches=Object.keys(allTags).filter(t=>t.toLowerCase().includes(q));
+
+  const postMatches=posts.filter(p=>!isExpired(p) && canSee(p,currentUser) && p.content.toLowerCase().includes(q));
+
+  let html='';
+
+  if(userMatches.length>0){
+    html+=`<div class="search-section-title">افراد</div>`;
+    userMatches.forEach(u=>{
+      html+=`<div class="search-user-row" onclick="showProfile('${u.handle}')">
+        <div class="avatar av-md" style="background:${avColor(u.handle)}">${u.avatar}</div>
+        <div class="search-user-info">
+          <div class="search-user-name">${escH(u.name)}</div>
+          <div class="search-user-handle">@${u.handle}</div>
+        </div>
+      </div>`;
+    });
+  }
+
+  if(tagMatches.length>0){
+    html+=`<div class="search-section-title">هشتگ‌ها</div>`;
+    tagMatches.forEach(tag=>{
+      html+=`<div class="search-hashtag-row" onclick="showHashtag('${tag}')">
+        <div class="search-hashtag-icon">#</div>
+        <div class="search-hashtag-info">
+          <div class="search-hashtag-name">#${escH(tag)}</div>
+          <div class="search-hashtag-count">${allTags[tag]} پست</div>
+        </div>
+      </div>`;
+    });
+  }
+
+  if(postMatches.length>0){
+    html+=`<div class="search-section-title">پست‌ها</div>`;
+    html+=postMatches.map(p=>renderPostCard(p,false)).join('');
+  }
+
+  if(userMatches.length===0 && tagMatches.length===0 && postMatches.length===0){
+    html='<div class="empty">نتیجه‌ای یافت نشد.</div>';
+  }
+
+  container.innerHTML=html;
+  attachPostEvents(container);
+}
+
+// ═══════════════════════════════════════════
+// HASHTAG PAGE
+// ═══════════════════════════════════════════
+function showHashtag(tag){
+  setNav('');
+  document.getElementById('hashtag-title-text').textContent='#'+tag;
+  const tagPosts=posts.filter(p=>!isExpired(p) && canSee(p,currentUser) && extractHashtags(p.content).includes(tag));
+  document.getElementById('hashtag-count-text').textContent=tagPosts.length+' پست';
+  const container=document.getElementById('hashtag-posts');
+  if(tagPosts.length===0){
+    container.innerHTML='<div class="empty">پستی با این هشتگ وجود ندارد.</div>';
+  } else {
+    container.innerHTML=tagPosts.map(p=>renderPostCard(p,false)).join('');
+    attachPostEvents(container);
+  }
+  showView('hashtag');
+}
+
+
+// ═══════════════════════════════════════════
+function toggleDrawer(){
+  drawerOpen=!drawerOpen;
+  document.getElementById('compose-drawer').classList.toggle('open',drawerOpen);
+  document.getElementById('drawer-arrow').classList.toggle('open',drawerOpen);
+  if(drawerOpen && !editingPostId){
+    setTimeout(()=>document.getElementById('compose-area').focus(),320);
+    const area=document.getElementById('compose-area');
+    area.innerHTML='';
+    updateCharCount();
+  }
+}
+function closeDrawer(){
+  drawerOpen=false;
+  document.getElementById('compose-drawer').classList.remove('open');
+  document.getElementById('drawer-arrow').classList.remove('open');
+}
+
+function onComposeInput(){
+  const area=document.getElementById('compose-area');
+  // auto resize
+  area.style.minHeight='100px';
+  updateCharCount();
+  updateComposeBtn();
+  // placeholder
+  if(area.textContent.trim()==='') area.innerHTML='';
+}
+
+function updateCharCount(){
+  const area=document.getElementById('compose-area');
+  const len=area.textContent.trim().length;
+  const el=document.getElementById('char-count');
+  el.textContent=`${len} / ۱۵۰`;
+  el.className='char-count'+(len>150?' err':len>120?' warn':'');
+}
+function updateComposeBtn(){
+  const area=document.getElementById('compose-area');
+  const len=area.textContent.trim().length;
+  document.getElementById('compose-submit').disabled=(len<1||len>150);
+}
+function handleComposeKey(e){
+  if(e.key==='Enter'&&e.ctrlKey){ doPost(); }
+}
+
+// Rich text formatting
+function applyFmt(tag){
+  const area=document.getElementById('compose-area');
+  area.focus();
+  const sel=window.getSelection();
+  if(!sel||sel.rangeCount===0) return;
+  const range=sel.getRangeAt(0);
+  if(range.collapsed) return;
+  const el=document.createElement(tag);
+  try{ range.surroundContents(el); }catch(e){}
+  updateCharCount(); updateComposeBtn();
+}
+
+// ═══════════════════════════════════════════
+// POST
+// ═══════════════════════════════════════════
+let editingPostId = null;
+
+function doPost(){
+  if(!currentUser) return;
+  const area=document.getElementById('compose-area');
+  const rawText=area.textContent.trim();
+  if(rawText.length<1||rawText.length>150){ notify('پست باید بین ۱ تا ۱۵۰ کاراکتر باشد.'); return; }
+
+  const html=area.innerHTML.trim();
+  const isFriends=document.getElementById('opt-friends').checked;
+  const isTemp=document.getElementById('opt-temp').checked;
+  const isGhost=document.getElementById('opt-ghost').checked;
+
+  if(editingPostId){
+    const post=posts.find(p=>p.id===editingPostId);
+    if(post){
+      post.content=rawText;
+      post.html=html;
+      post.privacy=isFriends?'friends':'public';
+      post.isTemp=isTemp;
+      post.isGhost=isGhost;
+      post.edited=true;
+    }
+    editingPostId=null;
+    document.getElementById('compose-submit').textContent='انتشار';
+    document.getElementById('compose-title-text').textContent='پست جدید';
+    area.innerHTML='';
+    document.getElementById('opt-friends').checked=false;
+    document.getElementById('opt-temp').checked=false;
+    document.getElementById('opt-ghost').checked=false;
+    updateCharCount(); updateComposeBtn();
+    closeDrawer();
+    notify('پست ویرایش شد.');
+    refreshView();
+    return;
+  }
+
+  const id=Date.now();
+  const post={
+    id, author:currentUser,
+    content:rawText, html,
+    privacy: isFriends?'friends':'public',
+    isTemp, isGhost,
+    edited:false,
+    createdAt: tsNow(),
+    time: nowStr(),
+    likes:0, likedBy:[],
+    reposts:0, repostedBy:[],
+    comments:[], views:0,
+  };
+  posts.unshift(post);
+
+  area.innerHTML='';
+  document.getElementById('opt-friends').checked=false;
+  document.getElementById('opt-temp').checked=false;
+  document.getElementById('opt-ghost').checked=false;
+  updateCharCount(); updateComposeBtn();
+  closeDrawer();
+  notify('پست منتشر شد.');
+  renderFeed();
+}
+
+function startEditPost(id){
+  const post=posts.find(p=>p.id===id);
+  if(!post||!currentUser||post.author!==currentUser) return;
+  editingPostId=id;
+
+  // open drawer if closed
+  if(!drawerOpen) toggleDrawer();
+
+  const area=document.getElementById('compose-area');
+  area.innerHTML=post.html||escH(post.content);
+  document.getElementById('opt-friends').checked = post.privacy==='friends';
+  document.getElementById('opt-temp').checked = !!post.isTemp;
+  document.getElementById('opt-ghost').checked = !!post.isGhost;
+  updateCharCount(); updateComposeBtn();
+  document.getElementById('compose-submit').textContent='ذخیره ویرایش';
+  const titleEl=document.getElementById('compose-title-text');
+  if(titleEl) titleEl.textContent='ویرایش پست';
+
+  closeAllMenus();
+  // scroll to compose area
+  document.getElementById('compose-trigger-wrap')?.scrollIntoView({behavior:'smooth',block:'start'});
+  setTimeout(()=>area.focus(),350);
+}
+
+function cancelEdit(){
+  editingPostId=null;
+  document.getElementById('compose-submit').textContent='انتشار';
+  const titleEl=document.getElementById('compose-title-text');
+  if(titleEl) titleEl.textContent='پست جدید';
+  document.getElementById('compose-area').innerHTML='';
+  document.getElementById('opt-friends').checked=false;
+  document.getElementById('opt-temp').checked=false;
+  document.getElementById('opt-ghost').checked=false;
+  updateCharCount(); updateComposeBtn();
+  closeDrawer();
+}
+
+// ═══════════════════════════════════════════
+// FEED RENDER
+// ═══════════════════════════════════════════
+function switchFeedTab(tab,btn){
+  feedTab=tab;
+  document.querySelectorAll('#view-feed .tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderFeed();
+}
+
+function renderFeed(){
+  // Clean expired temp posts
+  posts=posts.filter(p=>!isExpired(p));
+
+  let fp=posts.filter(p=>canSee(p,currentUser));
+  if(feedTab==='friends'){
+    if(!currentUser){ document.getElementById('feed-list').innerHTML='<div class="empty">برای دیدن پست دوستان وارد شوید.</div>'; return; }
+    ensureSocial(currentUser);
+    fp=fp.filter(p=>friends[currentUser].has(p.author)||p.author===currentUser);
+  }
+
+  // Increment views (for posts not authored by viewer)
+  fp.forEach(p=>{ if(p.author!==currentUser) p.views=(p.views||0)+1; });
+
+  const container=document.getElementById('feed-list');
+  if(fp.length===0){
+    container.innerHTML='<div class="empty">هنوز پستی وجود ندارد.</div>';
+    return;
+  }
+  container.innerHTML=fp.map(p=>renderPostCard(p)).join('');
+  attachPostEvents(container);
+}
+
+// ═══════════════════════════════════════════
+// POST CARD
+// ═══════════════════════════════════════════
+function renderPostCard(post){
+  const isGhost=post.isGhost;
+  const authorHandle=post.author;
+  const u=users[authorHandle]||{};
+
+  const displayName=isGhost?'کاربر ناشناس':escH(u.name||authorHandle);
+  const displayHandle=isGhost?'ghost':authorHandle;
+  const avatarLetter=isGhost?'؟':(u.avatar||'?');
+  const avatarBg=isGhost?'#9ca3af':avColor(authorHandle);
+
+  const liked   =currentUser&&post.likedBy.includes(currentUser);
+  const reposted=currentUser&&post.repostedBy.includes(currentUser);
+  const isSaved =currentUser&&savedByUser[currentUser]&&savedByUser[currentUser].has(post.id);
+
+  // badges
+  let badges='';
+  if(post.privacy==='friends') badges+=`<span class="badge badge-friends">دوستان</span>`;
+  if(post.isGhost) badges+=`<span class="badge badge-ghost">روح</span>`;
+  if(post.isTemp)  badges+=`<span class="badge badge-temp">موقت</span>`;
+  if(post.edited)  badges+=`<span class="badge badge-edited">ویرایش‌شده</span>`;
+
+  // visible comments
+  const visCmts=post.comments.filter(c=>canSeeComment(c,post.author,currentUser));
+  const cmtLabel = visCmts.length>0 ? `${visCmts.length} دیدگاه` : 'دیدگاه';
+  const cmtsHtml=`
+    <button class="cmt-toggle-btn" data-cmt-toggle>
+      <span class="cmt-toggle-arrow" data-cmt-arrow>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </span>
+      <span data-cmt-label>${cmtLabel}</span>
+    </button>
+    <div class="cmts-drawer" data-cmts-drawer>
+      <div class="cmts-inner">
+        ${visCmts.map(c=>{
+          const cu=users[c.author]||{};
+          const privB=c.isPrivate?`<span class="cmt-priv-badge">خصوصی</span>`:'';
+          return `<div class="cmt-item">
+            <div class="avatar av-sm" style="background:${avColor(c.author)}" onclick="showProfile('${c.author}')">${cu.avatar||'?'}</div>
+            <div class="cmt-bubble">
+              <div class="cmt-name">${escH(cu.name||c.author)}${privB}</div>
+              <div class="cmt-text">${escH(c.text)}</div>
+            </div>
+          </div>`;
+        }).join('')}
+        <div class="cmt-row">
+          ${currentUser?`<div class="avatar av-sm" style="background:${avColor(currentUser)}">${users[currentUser]?.avatar||''}</div>`:''}
+          <input class="cmt-input" type="text" placeholder="دیدگاه بنویس..." data-cmt-input>
+          <label class="cmt-priv-lbl"><input type="checkbox" data-cmt-priv> خصوصی</label>
+          <button class="cmt-send" data-cmt-send>ارسال</button>
+        </div>
+      </div>
+    </div>`;
+
+  // repost label
+  const repostLabel=post.repostedBy.length>0?
+    `<div style="font-size:11px;color:var(--repost);margin-bottom:5px;display:flex;align-items:center;gap:4px">${icoRepost()}<span>بازنشر شده توسط ${post.repostedBy.length} نفر</span></div>`:'';
+
+  // more menu items (only for own posts)
+  const isOwn=currentUser&&post.author===currentUser;
+  const moreMenu=isOwn?`
+    <div class="menu-wrap">
+      <button class="act act-more" onclick="toggleMenu('pmenu-${post.id}',this)" title="بیشتر">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+      </button>
+      <div class="dropdown" id="pmenu-${post.id}" style="min-width:150px;left:auto;right:0">
+        <button class="dropdown-item" onclick="startEditPost(${post.id})">ویرایش پست</button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item danger" onclick="deletePost(${post.id})">حذف پست</button>
+      </div>
+    </div>`:'';
+
+  return `
+  <div class="post-card" data-id="${post.id}">
+    <div class="avatar av-md${isGhost?' av-ghost':''}" style="background:${avatarBg}"${!isGhost?` onclick="showProfile('${authorHandle}')"`:''}>${avatarLetter}</div>
+    <div class="post-body">
+      ${repostLabel}
+      <div class="post-meta">
+        ${!isGhost?`<span class="post-author" onclick="showProfile('${authorHandle}')">${displayName}</span>`:`<span class="post-author" style="cursor:default">${displayName}</span>`}
+        <span class="post-handle">@${displayHandle}</span>
+        ${badges}
+        <span class="post-time">${post.time}</span>
+      </div>
+      <div class="post-text">${linkifyText(post.html||escH(post.content))}</div>
+      <div class="post-actions">
+        <button class="act ${liked?'liked':''}" data-action="like">${icoHeart(liked)} ${post.likes}</button>
+        <button class="act" data-action="comment-toggle">${icoComment()} ${visCmts.length>0?visCmts.length:''}</button>
+        <button class="act ${reposted?'reposted':''}" data-action="repost">${icoRepost()} ${post.reposts}</button>
+        <button class="act ${isSaved?'saved':''}" data-action="save">${icoSave(isSaved)}</button>
+        ${moreMenu}
+      </div>
+      <div class="post-stats">
+        <span class="pstat">${icoView()} ${post.views||0} بازدید</span>
+      </div>
+      ${cmtsHtml}
+    </div>
+  </div>`;
+}
+
+function attachPostEvents(container){
+  container.querySelectorAll('.post-card').forEach(card=>{
+    const id=parseInt(card.dataset.id);
+    card.querySelector('[data-action="like"]')?.addEventListener('click',()=>toggleLike(id));
+    card.querySelector('[data-action="repost"]')?.addEventListener('click',()=>toggleRepost(id));
+    card.querySelector('[data-action="save"]')?.addEventListener('click',()=>toggleSave(id));
+
+    // comment toggle drawer (controlled by both the action-row icon and the inline toggle button)
+    const drawer=card.querySelector('[data-cmts-drawer]');
+    const arrow=card.querySelector('[data-cmt-arrow]');
+    const toggleDrawerFn=()=>{
+      if(!currentUser){showLogin();return;}
+      const isOpen=drawer.classList.contains('open');
+      drawer.classList.toggle('open',!isOpen);
+      if(arrow) arrow.classList.toggle('open',!isOpen);
+      if(!isOpen){
+        setTimeout(()=>card.querySelector('[data-cmt-input]')?.focus(),340);
+      }
+    };
+    card.querySelector('[data-action="comment-toggle"]')?.addEventListener('click',toggleDrawerFn);
+    card.querySelector('[data-cmt-toggle]')?.addEventListener('click',toggleDrawerFn);
+
+    const inp=card.querySelector('[data-cmt-input]');
+    const send=card.querySelector('[data-cmt-send]');
+    if(inp&&send){
+      const doC=()=>{
+        if(!inp.value.trim()) return;
+        const priv=card.querySelector('[data-cmt-priv]');
+        const isPrivate=priv&&priv.checked;
+        const post=posts.find(p=>p.id===id);
+        if(post){ post.comments.push({author:currentUser,text:inp.value.trim(),isPrivate}); }
+        inp.value='';
+        notify(isPrivate?'دیدگاه خصوصی ثبت شد.':'دیدگاه ثبت شد.');
+        refreshView();
+      };
+      send.addEventListener('click',doC);
+      inp.addEventListener('keydown',e=>{ if(e.key==='Enter') doC(); });
+    }
+  });
+}
+
+function toggleLike(id){
+  if(!currentUser){showLogin();return;}
+  const p=posts.find(x=>x.id===id);if(!p)return;
+  const liked=p.likedBy.includes(currentUser);
+  p.likes+=liked?-1:1;
+  p.likedBy=liked?p.likedBy.filter(u=>u!==currentUser):[...p.likedBy,currentUser];
+  refreshView();
+}
+function toggleRepost(id){
+  if(!currentUser){showLogin();return;}
+  const p=posts.find(x=>x.id===id);if(!p)return;
+  const r=p.repostedBy.includes(currentUser);
+  if(r){
+    p.reposts--;
+    p.repostedBy=p.repostedBy.filter(u=>u!==currentUser);
+    notify('بازنشر حذف شد.');
+  } else {
+    p.reposts++;
+    p.repostedBy=[...p.repostedBy,currentUser];
+    notify('پست بازنشر شد.');
+  }
+  refreshView();
+}
+function toggleSave(id){
+  if(!currentUser){showLogin();return;}
+  ensureSocial(currentUser);
+  const saved=savedByUser[currentUser].has(id);
+  if(saved) savedByUser[currentUser].delete(id);
+  else savedByUser[currentUser].add(id);
+  notify(saved?'از ذخیره‌ها حذف شد.':'پست ذخیره شد.');
+  refreshView();
+}
+function deletePost(id){
+  posts=posts.filter(p=>p.id!==id);
+  if(editingPostId===id) cancelEdit();
+  closeAllMenus(); notify('پست حذف شد.'); refreshView();
+}
+
+function refreshView(){
+  const active=document.querySelector('.view.active');
+  if(!active) return;
+  if(active.id==='view-feed') renderFeed();
+  else if(active.id==='view-profile'&&profileHandle) renderProfilePosts(profileHandle);
+}
+
+// ═══════════════════════════════════════════
+// PROFILE POSTS
+// ═══════════════════════════════════════════
+function renderProfilePosts(handle){
+  const container=document.getElementById('profile-posts');
+  let pPosts;
+  if(profileTabMode==='saved'){
+    if(handle!==currentUser){container.innerHTML='<div class="empty">فقط خودت ذخیره‌هایت را می‌بینی.</div>';return;}
+    ensureSocial(handle);
+    pPosts=posts.filter(p=>savedByUser[handle].has(p.id)&&canSee(p,currentUser)&&!isExpired(p));
+  } else {
+    pPosts=posts.filter(p=>p.author===handle&&canSee(p,currentUser)&&!isExpired(p));
+  }
+  if(pPosts.length===0){container.innerHTML='<div class="empty">هنوز پستی وجود ندارد.</div>';return;}
+  container.innerHTML=pPosts.map(p=>renderPostCard(p,false)).join('');
+  attachPostEvents(container);
+}
+
+// ═══════════════════════════════════════════
+// FRIENDS
+// ═══════════════════════════════════════════
+function renderFriends(){
+  if(!currentUser){document.getElementById('friends-content').innerHTML='<div class="empty">ابتدا وارد شوید.</div>';return;}
+  ensureSocial(currentUser);
+  const reqs=[...friendReqs[currentUser]];
+  const frs=[...friends[currentUser]];
+  const others=Object.keys(users).filter(h=>h!==currentUser&&!friends[currentUser].has(h)&&!hasPendingReq(currentUser,h)&&!hasPendingReq(h,currentUser));
+
+  let html='<div class="friends-section">';
+
+  if(reqs.length>0){
+    html+=`<div class="section-title">درخواست‌های دوستی (${reqs.length})</div>`;
+    reqs.forEach(h=>{
+      const u=users[h]||{};
+      html+=`<div class="person-row">
+        <div class="avatar av-sm" style="background:${avColor(h)}" onclick="showProfile('${h}')">${u.avatar||'?'}</div>
+        <div class="person-info"><div class="person-name" onclick="showProfile('${h}')">${escH(u.name||h)}</div><div class="person-handle">@${h}</div></div>
+        <button class="btn btn-accept" onclick="acceptReq('${h}')">پذیرش</button>
+        <button class="btn btn-reject" onclick="rejectReq('${h}')" style="margin-right:5px">رد</button>
+      </div>`;
+    });
+    html+='<div class="section-gap"></div>';
+  }
+
+  html+=`<div class="section-title">دوستان (${frs.length})</div>`;
+  if(frs.length===0) html+='<div style="color:var(--ink-4);font-size:13px;padding:8px 0">هنوز دوستی ندارید.</div>';
+  else frs.forEach(h=>{
+    const u=users[h]||{};
+    html+=`<div class="person-row">
+      <div class="avatar av-sm" style="background:${avColor(h)}" onclick="showProfile('${h}')">${u.avatar||'?'}</div>
+      <div class="person-info"><div class="person-name" onclick="showProfile('${h}')">${escH(u.name||h)}</div><div class="person-handle">@${h}</div></div>
+      <button class="btn btn-danger" onclick="doUnfriend('${h}');renderFriends()">خروج</button>
+    </div>`;
+  });
+
+  html+='</div>';
+  document.getElementById('friends-content').innerHTML=html;
+}
+
+// ═══════════════════════════════════════════
+// SOCIAL ACTIONS
+// ═══════════════════════════════════════════
+function doFollow(handle){
+  if(!currentUser){showLogin();return;}
+  ensureSocial(currentUser);
+  follows[currentUser].add(handle);
+  notify('دنبال '+users[handle].name+' شدید.');
+  showProfile(handle);
+}
+function doUnfollow(handle){
+  if(!currentUser) return;
+  follows[currentUser]&&follows[currentUser].delete(handle);
+  notify('دنبال‌نکردن '+users[handle].name);
+  showProfile(handle);
+}
+function sendFriendReq(handle){
+  if(!currentUser){showLogin();return;}
+  ensureSocial(handle);
+  friendReqs[handle].add(currentUser);
+  updateReqDot();
+  notify('درخواست دوستی به '+users[handle].name+' ارسال شد.');
+  showProfile(handle);
+}
+function acceptReq(handle){
+  if(!currentUser) return;
+  ensureSocial(currentUser); ensureSocial(handle);
+  friendReqs[currentUser].delete(handle);
+  friends[currentUser].add(handle);
+  friends[handle].add(currentUser);
+  updateReqDot();
+  notify(users[handle].name+' به دوستان شما اضافه شد.');
+  if(document.getElementById('view-friends').classList.contains('active')) renderFriends();
+  else showProfile(handle);
+}
+function rejectReq(handle){
+  if(!currentUser) return;
+  friendReqs[currentUser].delete(handle);
+  updateReqDot();
+  notify('درخواست رد شد.');
+  renderFriends();
+}
+function doUnfriend(handle){
+  if(!currentUser) return;
+  ensureSocial(currentUser); ensureSocial(handle);
+  friends[currentUser].delete(handle);
+  friends[handle].delete(currentUser);
+  notify('از دوستان '+users[handle].name+' خارج شدید.');
+  if(document.getElementById('view-profile').classList.contains('active')) showProfile(profileHandle);
+  else renderFriends();
+}
+function updateReqDot(){
+  const dot=document.getElementById('req-dot');
+  if(!currentUser){dot.style.display='none';return;}
+  ensureSocial(currentUser);
+  dot.style.display=friendReqs[currentUser].size>0?'inline':'none';
+}
+
+// ═══════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════
+function doLogin(){
+  const h=document.getElementById('login-handle').value.trim();
+  const p=document.getElementById('login-pass').value;
+  if(!users[h]){showErr('login-error','کاربر یافت نشد.');return;}
+  if(p!==(passwords[h]||'1234')){showErr('login-error','رمز عبور اشتباه.');return;}
+  currentUser=h; ensureSocial(h); afterLogin();
+}
+function doRegister(){
+  const name=document.getElementById('reg-name').value.trim();
+  const handle=document.getElementById('reg-handle').value.trim().replace(/^@/,'');
+  const bio=document.getElementById('reg-bio').value.trim();
+  const pass=document.getElementById('reg-pass').value;
+  if(!name||!handle||!pass){showErr('reg-error','فیلدهای الزامی را پر کنید.');return;}
+  if(users[handle]){showErr('reg-error','این نام کاربری قبلاً ثبت شده.');return;}
+  users[handle]={name,handle,bio,avatar:name[0]};
+  passwords[handle]=pass; currentUser=handle; ensureSocial(handle);
+  afterLogin();
+}
+function afterLogin(){
+  updateHeaderForUser(); updateReqDot();
+  notify('خوش آمدید، '+users[currentUser].name);
+  showFeed();
+}
+function doLogout(){
+  currentUser=null; updateHeaderForUser(); updateReqDot();
+  notify('خارج شدید.'); closeDrawer(); showFeed();
+}
+function updateHeaderForUser(){
+  const li=!!currentUser;
+  document.getElementById('nav-login').style.display=li?'none':'';
+  document.getElementById('nav-logout').style.display=li?'':'none';
+  document.getElementById('nav-profile').style.display=li?'':'none';
+  document.getElementById('nav-friends').style.display=li?'':'none';
+  document.getElementById('compose-trigger-wrap').style.display=li?'block':'none';
+  if(li){
+    const av=document.getElementById('quick-avatar');
+    av.textContent=users[currentUser].avatar;
+    av.style.background=avColor(currentUser);
+  }
+}
+function showLogin(){
+  setNav('');
+  document.getElementById('login-handle').value='';
+  document.getElementById('login-pass').value='';
+  hideErr('login-error'); showView('login');
+  setTimeout(()=>document.getElementById('login-handle').focus(),60);
+}
+function showRegister(){
+  setNav(''); hideErr('reg-error'); showView('register');
+  setTimeout(()=>document.getElementById('reg-name').focus(),60);
+}
+
+// ═══════════════════════════════════════════
+// DROPDOWN MENU
+// ═══════════════════════════════════════════
+function toggleMenu(id, btn){
+  const el=document.getElementById(id);
+  const isOpen=el.classList.contains('open');
+  closeAllMenus();
+  if(!isOpen){
+    el.classList.add('open');
+    document.getElementById('overlay').style.display='block';
+    if(btn){
+      const r=btn.getBoundingClientRect();
+      const mw=190;
+      const mh=el.scrollHeight||130;
+      // decide up or down
+      let top = (window.innerHeight - r.bottom > mh + 10)
+        ? r.bottom + 6
+        : r.top - mh - 6;
+      let left = r.right - mw;
+      if(left < 8) left = 8;
+      if(top < 8) top = 8;
+      el.style.top = top + 'px';
+      el.style.left = left + 'px';
+      el.style.width = mw + 'px';
+    }
+  }
+}
+function closeAllMenus(){
+  document.querySelectorAll('.dropdown.open').forEach(d=>d.classList.remove('open'));
+  document.getElementById('overlay').style.display='none';
+}
+
+// ═══════════════════════════════════════════
+// ICONS
+// ═══════════════════════════════════════════
+function icoHeart(f){return`<svg width="15" height="15" viewBox="0 0 24 24" fill="${f?'var(--like)':'none'}" stroke="${f?'var(--like)':'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;}
+function icoComment(){return`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;}
+function icoRepost(){return`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`;}
+function icoSave(f){return`<svg width="15" height="15" viewBox="0 0 24 24" fill="${f?'var(--save)':'none'}" stroke="${f?'var(--save)':'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`;}
+function icoView(){return`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+// contenteditable placeholder
+document.addEventListener('DOMContentLoaded',()=>{
+  const area=document.getElementById('compose-area');
+  if(area){
+    area.addEventListener('focus',()=>{ if(!area.textContent.trim()) area.innerHTML=''; });
+    area.addEventListener('blur',()=>{ if(!area.textContent.trim()) area.innerHTML=''; });
+  }
+});
+
+updateHeaderForUser();
+updateReqDot();
+renderFeed();
+</script>
+</body>
+</html>
